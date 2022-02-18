@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace K911\Swoole\Bridge\Doctrine\ORM;
 
+use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\ORM\EntityManagerInterface;
 use K911\Swoole\Server\RequestHandler\RequestHandlerInterface;
 use Swoole\Http\Request;
@@ -27,10 +28,16 @@ final class EntityManagerHandler implements RequestHandlerInterface
      */
     public function handle(Request $request, Response $response): void
     {
-        if (!$this->connection->ping()) {
+        try {
+            $this->connection->executeQuery($this->connection->getDatabasePlatform()->getDummySelectSQL());
+        } catch (DBALException $e) {
             $this->connection->close();
             $this->connection->connect();
         }
+
+//        if (!$this->entityManager->isOpen()) {
+//            $this->managerRegistry->resetManager($this->entityManager->);
+//        }
 
         $this->decorated->handle($request, $response);
 
